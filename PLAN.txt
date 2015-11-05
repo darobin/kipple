@@ -1,0 +1,39 @@
+
+TODO:
+  - start capturing the information that I would like this to store in a subdirectory
+
+BASIC INFRASTRUCTURE:
+  - Couch (init and base configuration)
+  - Express
+  - React with proper routing and base page send
+  - sub-routers for all API access points
+
+TYPES:
+  - very simple ontological system
+  - classes can be defined: name and bag of properties
+  - properties can be defined: name, range, and arity
+  - import type (typically from schema.org or a similar ontology)
+  - generate GraphQL to go with
+  - generic edit/view/list React component that are composed with Relay for type-specific components
+  - DB collections: these are defined as objects in a specific collection, of a given type
+    - they map to API endpoints
+
+LOAD:
+  - start with people, we need those for everything
+  - then books/articles
+  - find books/articles (to prefill) from various APIs (see undefined project)
+  - notes on books -> that is where the editor starts
+
+PROJECTS:
+  - project have names, they point to data
+  - so basically an article in the system can be published to a specific endpoints if it belongs to
+    a given project (e.g. to a blog)
+
+BERJON.COM:
+  - redesign
+  - import into articles
+  - pre-render, can use React all the same
+
+RESEARCH:
+  - this is where this actually becomes serious
+  - etiologi.es
