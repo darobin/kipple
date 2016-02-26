@@ -1,15 +1,33 @@
 
 import React from 'react';
-import { Editor, EditorState } from 'draft-js';
+import { Editor, EditorState, ContentState, convertFromRaw } from 'draft-js';
+import Article from './Article';
+
+const defaultContent = {
+  blocks: [
+    {
+      text: ' ',
+      type: 'kipple:title',
+      entityRanges: [],
+    },
+    {
+      text: ' ',
+      type: 'kipple:hunk-list',
+      entityRanges: [],
+    },
+  ],
+  entityMap: {},
+};
 
 export default class Kipple extends React.Component {
   constructor (props) {
     super(props);
-    this.state = { editorState: EditorState.createEmpty() };
-    this.onChange = (editorState) => this.setState({ editorState });
+    // TODO: get this from localStorage if available
+    const contentState = ContentState.createFromBlockArray(convertFromRaw(defaultContent));
+    this.state = { editorState: EditorState.createWithContent(contentState) };
   }
   render () {
-    return <Editor editorState={this.state.editorState} onChange={this.onChange}/>;
+    return <Article editorState={this.state.editorState}/>;
   }
 }
 // HOW TO MAKE THIS WORK
@@ -28,3 +46,8 @@ export default class Kipple extends React.Component {
 //    happens on enter, tab, etc. (delegated to it by the hunks). It has a focus() method.
 //  - the SectionList behaves like the HunkList, but each Section behaves pretty much like the
 //    Article
+// STEPS
+//  - start with just Article that contains just Title
+//  - Title just pure text (styled)
+//  - get/set/load data
+//  - then start into the hunk business
