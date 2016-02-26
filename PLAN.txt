@@ -1,8 +1,19 @@
 
 TODO:
-  - eslintrc: add react
-  - install deps, npm outdated
+  - install draft-js
+    - build a small editor directly in public/index.html
+    - start adding structure
+    - try to build a sections+hunks editor
+    - search-index for local indexing (powers the link prompt)
+    - store documents to pouch, sync
+    - completely offline-first, no APIs beyond sync
   - copy baseline server from reader
+  - test that the basics work
+  - copy basic components from Reader
+  - check that we render a page
+  - copy basic couch access stuff from Librarian
+    - add a layer that converts $type/$id to _id so it's unique
+    - that layer ought to know how to do slugging?
 
 
 EDITOR:
