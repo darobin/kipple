@@ -1,5 +1,6 @@
 
 TODO:
+  - upgrade cssnext
   - install draft-js
     - build a small editor directly in public/index.html
     - start adding structure
