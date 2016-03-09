@@ -1,4 +1,15 @@
 
+EDITOR SLIGHT REWORK:
+  - don't nest editors, it's weird and probably a bad idea
+  - have one big tree structure for the article, the leaves of which contain individual editors
+  - each leaf contains a standard-named prop that is the editor data model
+    - it is automatically passed to the editor
+  - the structure will likely be in charge of handling focus, return, that sort of thing
+  - the structure will inject the intermediate components that enable the insertion of editors
+  - start with a simple title + hunk-list + section-list structure and use that to generate a tree
+    of editors
+  - edit, save, etc.; take it from there
+
 TODO:
   - upgrade cssnext
   - install draft-js
