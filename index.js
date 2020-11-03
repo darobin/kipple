@@ -57,8 +57,20 @@ function runServer (cb) {
 
 function runCommand (port, command, params, cb) {
   let { timeout = 0, ...data } = params;
+  runRequest(`http://127.0.0.1:${port}`, timeout, command, data, (err, status, json) => {
+    if (err) return cb(err);
+    // XXX: here I need to intercept failures to login, and know how to rerun
+    if (status === 401) {
+      // XXX: ask for password, rerun
+      return;
+    }
+    cb(null, json);
+  });
+}
+
+function runRequest (url, timeout, command, data, cb) {
   post({
-      url: `http://127.0.0.1:${port}`,
+      url,
       timeout,
       data: {
         command,
