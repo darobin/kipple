@@ -1,2 +1,0 @@
-# kipple
-My own kipple
