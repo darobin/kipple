@@ -1,10 +1,12 @@
 
 let { platform, homedir } = require('os')
   , { join } = require('path')
-  , { mkdir, readFile, rm } = require('fs')
+  , { mkdir, readFile, rm, readdir } = require('fs')
+  , keytar = require('keytar')
   // , { post } = require('axios')
   , kipDirName = `${platform() === 'win32' ? '' : '.'}kipple`
   , kipDir = join(homedir(), kipDirName)
+  , service = 'com.berjon.kipple'
 ;
 
 function die (err) {
@@ -55,8 +57,29 @@ async function rmDir (dir) {
   });
 }
 
+async function listSubdirNames (dir) {
+  return new Promise((resolve, reject) => {
+    readdir(dir, { withFileTypes: true }, (err, files) => {
+      if (err) return reject(err);
+      resolve(files.filter(f => f.isDirectory()).map(f => f.name));
+    });
+  });
+}
+
 function dataDir (system, account, source) {
   return join(kipDir, 'data', system, account, source || '');
+}
+
+function getPassword (system, account) {
+  return keytar.getPassword(service, `${system}:${account}`);
+}
+
+function setPassword (system, account, password) {
+  return keytar.setPassword(service, `${system}:${account}`, password);
+}
+
+function deletePassword (system, account) {
+  return keytar.deletePassword(service, `${system}:${account}`);
 }
 
 module.exports = {
@@ -66,4 +89,8 @@ module.exports = {
   ensureDir,
   dataDir,
   rmDir,
+  listSubdirNames,
+  getPassword,
+  setPassword,
+  deletePassword,
 };

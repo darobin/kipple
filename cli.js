@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 
 let { program } = require('commander')
-  , { getPassword, setPassword, deletePassword } = require('keytar')
-  , { ok, die, ensureDir, dataDir, rmDir } = require('./index')
-  , service = 'com.berjon.kipple'
+  , { ok, die, ensureDir, dataDir, rmDir, getPassword, setPassword, deletePassword } = require('./index')
+  , roam = require('./roam')
 ;
 
 // --version
@@ -18,9 +17,9 @@ program
   .description('add a new login to the system, but note that this will not test it to see if it is correct')
   .action(async (system, account, password) => {
     try {
-      let hadPwd = await deletePassword(service, `${system}:${account}`);
+      let hadPwd = await deletePassword(system, account);
       if (hadPwd) console.warn(`Updating password for ${system}:${account}…`);
-      await setPassword(service, `${system}:${account}`, password);
+      await setPassword(system, account, password);
       ok();
     }
     catch (err) {
@@ -34,7 +33,7 @@ program
   .description('removes a login from the system')
   .action(async (system, account) => {
     try {
-      await deletePassword(service, `${system}:${account}`);
+      await deletePassword(system, account);
       ok();
     }
     catch (err) {
@@ -59,7 +58,7 @@ program
     try {
       if (system === 'roam') {
         if (!source) die(`Adding a Roam source requires specifying the database as your source.`);
-        let pwd = await getPassword(service, `${system}:${account}`);
+        let pwd = await getPassword(system, account);
         if (!pwd) die(`Unknown account "${account}" in "${system}". Maybe "kipple login ${system} ${account}" first?`);
         await ensureDir(dataDir(system, account, source));
       }
@@ -90,6 +89,22 @@ program
   })
 ;
 
+// Pulling
+// This downloads the latest data from a system, optionally specifying account and source too.
+program
+  .command('pull <system> [account] [source]')
+  .description('pull data from a remote system, doing the specified account or all, same with source')
+  .action(async (system, account, source) => {
+    try {
+      if (system === 'roam') await roam.pull(account, source);
+      else die(`Unknown system: ${system}`);
+      ok();
+    }
+    catch (err) {
+      die(`Failed to pull: ${err}`);
+    }
+  })
+;
 
 // now do something
 program.parseAsync(process.argv);
