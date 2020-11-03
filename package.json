@@ -1,0 +1,32 @@
+{
+  "name": "kipple",
+  "version": "0.0.1",
+  "description": "Manage your kipple",
+  "main": "./index.js",
+  "scripts": {
+    "test": "mocha --reporter spec --bail"
+  },
+  "bin": {
+    "kipple": "./cli.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/darobin/kipple.git"
+  },
+  "eslintConfig": {
+    "extends": "robin"
+  },
+  "author": "Robin Berjon <robin@berjon.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/darobin/kipple/issues"
+  },
+  "homepage": "https://github.com/darobin/kipple",
+  "devDependencies": {
+    "eslint-config-robin": "^6.1.3",
+    "mocha": "^7.1.1"
+  },
+  "dependencies": {
+    "commander": "^5.0.0"
+  }
+}
