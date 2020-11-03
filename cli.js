@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 let { program } = require('commander')
-  , { getPassword, setPassword, deletePassword, findCredentials } = require('keytar')
-  , { ok, die, ensureSetup } = require('./index')
+  , { getPassword, setPassword, deletePassword } = require('keytar')
+  , { ok, die, ensureDir, dataDir, rmDir } = require('./index')
   , service = 'com.berjon.kipple'
 ;
 
@@ -43,10 +43,52 @@ program
   })
 ;
 
-// XXX:
-// - try to load the conf
-// - login command
-// - remove-login command
+// Manage sources
+// Data in Kipple is structured in this way:
+//  * system: the type of tool which the is the data's primary home (eg. roam)
+//  * account: the user of the system in question, there can be several users per system (eg. robin)
+//  * source: some systems have multiple sources, which may be separate databases or directories
+//    (eg. my-notes)
+// Adding a source adds the { system, account, source } tuple into the local store (with source
+// being optional). What that does depends on the system, it could well be nothing other than
+// creating an empty directory.
+program
+  .command('add-source <system> <account> [source]')
+  .description('adds a source of data, which is system/account/source, with an optional source')
+  .action(async (system, account, source) => {
+    try {
+      if (system === 'roam') {
+        if (!source) die(`Adding a Roam source requires specifying the database as your source.`);
+        let pwd = await getPassword(service, `${system}:${account}`);
+        if (!pwd) die(`Unknown account "${account}" in "${system}". Maybe "kipple login ${system} ${account}" first?`);
+        await ensureDir(dataDir(system, account, source));
+      }
+      else die(`Unknown system: ${system}`);
+      ok();
+    }
+    catch (err) {
+      die(`Failed to add source: ${err}`);
+    }
+  })
+;
+
+program
+  .command('remove-source <system> <account> [source]')
+  .description('removes a source of data, which is system/account/source, with an optional source')
+  .action(async (system, account, source) => {
+    try {
+      if (system === 'roam') {
+        if (!source) die(`Removing a Roam source requires specifying the database as your source.`);
+        await rmDir(dataDir(system, account, source));
+      }
+      else die(`Unknown system: ${system}`);
+      ok();
+    }
+    catch (err) {
+      die(`Failed to add source: ${err}`);
+    }
+  })
+;
 
 
 // now do something
