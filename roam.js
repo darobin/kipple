@@ -54,8 +54,6 @@ async function getLoggedInContext (account) {
   await page.type('input[name=password]', pwd);
   await page.click('.bp3-button');
   console.warn(`• Submitted login`);
-  // Roam is pretty slow, though maybe we can just use the selector
-  // await page.waitForTimeout(15000);
   await page.waitForSelector('.your-hosted-dbs-grid');
   console.warn(`• Logged in ${account}`);
   return context;
@@ -68,7 +66,6 @@ async function downloadJSONZipFile (ctx, source) {
   // load DB page and prep for download
   console.warn(`• Loading source page`);
   await page.goto(`https://roamresearch.com/#/app/${source}`, { timeout: 60000 });
-  // await page.waitForNavigation();
   await page._client.send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath: tmp });
   await page.waitForSelector('.bp3-icon-more');
   // click menu, then 'Export All' item
@@ -87,7 +84,6 @@ async function downloadJSONZipFile (ctx, source) {
   await page.waitForTimeout(1000);
   await page.click('.bp3-dialog-container .bp3-intent-primary');
   console.warn(`• Clicked download`);
-  // await page.waitForTimeout(60000);
   let timerID = setTimeout(() => { throw new Error(`Download for ${source} never started.`); }, 20000);
   await new Promise((resolve, reject) => {
     page._client.on('Page.downloadProgress', ({ receivedBytes, totalBytes, state }) => {
