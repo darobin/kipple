@@ -1,6 +1,6 @@
 {
   "name": "kipple",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Manage your kipple",
   "main": "./index.js",
   "scripts": {
