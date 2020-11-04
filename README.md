@@ -23,7 +23,7 @@ Currently, the systems that Kipple can interact with are:
 
 - [x] Roam Research
 - [ ] Evernote
-- [ ] LibraryThing
+- [x] LibraryThing
 - [ ] Zotero
 - [ ] Google Drive
 
@@ -53,6 +53,11 @@ There are variables that Kipple uses:
 
 This will add a login that Kipple memorises for future use. It will update your password if the
 account already exists.
+
+* For `roam`, this is your account name and password.
+* For `library-thing`, this is your `userid` and the
+  [JSON API key](http://www.librarything.com/api/json.php) (the value given as `key=` in the
+  examples on that page).
 
 ### `kipple remove-login <system> <account>`
 

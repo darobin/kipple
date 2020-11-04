@@ -1,9 +1,8 @@
 
 let { platform, homedir, tmpdir } = require('os')
   , { join } = require('path')
-  , { mkdir, readFile, rm, readdir, mkdtemp } = require('fs')
+  , { mkdir, readFile, writeFile, rm, readdir, mkdtemp } = require('fs')
   , keytar = require('keytar')
-  // , { post } = require('axios')
   , kipDirName = `${platform() === 'win32' ? '' : '.'}kipple`
   , kipDir = join(homedir(), kipDirName)
   , service = 'com.berjon.kipple'
@@ -35,6 +34,15 @@ async function loadJSON (path, def) {
         return reject(err);
       }
       resolve(parseJSON(data, def));
+    });
+  });
+}
+
+async function saveJSON (path, data) {
+  return new Promise((resolve, reject) => {
+    writeFile(path, JSON.stringify(data, null, 2), (err) => {
+      if (err) return reject(err);
+      resolve();
     });
   });
 }
@@ -95,6 +103,7 @@ module.exports = {
   die,
   ok,
   loadJSON,
+  saveJSON,
   ensureDir,
   dataDir,
   rmDir,

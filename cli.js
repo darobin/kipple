@@ -3,6 +3,7 @@
 let { program } = require('commander')
   , { ok, die, ensureDir, dataDir, rmDir, getPassword, setPassword, deletePassword } = require('./index')
   , roam = require('./roam')
+  , libThing = require('./library-thing')
 ;
 
 // --version
@@ -17,13 +18,14 @@ program
   .description('add a new login to the system, but note that this will not test it to see if it is correct')
   .action(async (system, account, password) => {
     try {
+      checkSystem(system);
       let hadPwd = await deletePassword(system, account);
       if (hadPwd) console.warn(`Updating password for ${system}:${account}…`);
       await setPassword(system, account, password);
       ok();
     }
     catch (err) {
-      die(`Failed to login: ${err}`);
+      die(`Failed to login:`, err);
     }
   })
 ;
@@ -37,7 +39,7 @@ program
       ok();
     }
     catch (err) {
-      die(`Failed to remove login: ${err}`);
+      die(`Failed to remove login:`, err);
     }
   })
 ;
@@ -56,8 +58,8 @@ program
   .description('adds a source of data, which is system/account/source, with an optional source')
   .action(async (system, account, source) => {
     try {
-      if (system === 'roam') {
-        if (!source) die(`Adding a Roam source requires specifying the database as your source.`);
+      if (system === 'roam' || system === 'library-thing') {
+        if (system === 'roam' && !source) die(`Adding a Roam source requires specifying the database as your source.`);
         let pwd = await getPassword(system, account);
         if (!pwd) die(`Unknown account "${account}" in "${system}". Maybe "kipple login ${system} ${account}" first?`);
         await ensureDir(dataDir(system, account, source));
@@ -66,7 +68,7 @@ program
       ok();
     }
     catch (err) {
-      die(`Failed to add source: ${err}`);
+      die(`Failed to add source:`, err);
     }
   })
 ;
@@ -76,15 +78,15 @@ program
   .description('removes a source of data, which is system/account/source, with an optional source')
   .action(async (system, account, source) => {
     try {
-      if (system === 'roam') {
-        if (!source) die(`Removing a Roam source requires specifying the database as your source.`);
+      if (system === 'roam' || system === 'library-thing') {
+        if (system === 'roam' && !source) die(`Removing a Roam source requires specifying the database as your source.`);
         await rmDir(dataDir(system, account, source));
       }
       else die(`Unknown system: ${system}`);
       ok();
     }
     catch (err) {
-      die(`Failed to add source: ${err}`);
+      die(`Failed to add source:`, err);
     }
   })
 ;
@@ -97,6 +99,7 @@ program
   .action(async (system, account, source) => {
     try {
       if (system === 'roam') await roam.pull(account, source);
+      else if (system === 'library-thing') await libThing.pull(account);
       else die(`Unknown system: ${system}`);
       ok();
     }
@@ -108,3 +111,8 @@ program
 
 // now do something
 program.parseAsync(process.argv);
+
+
+function checkSystem (system) {
+  if (system !== 'roam' && system !== 'library-thing') die(`Unknown system: ${system}`);
+}
