@@ -101,7 +101,7 @@ program
       ok();
     }
     catch (err) {
-      die(`Failed to pull: ${err}`);
+      die(`Failed to pull:`, err);
     }
   })
 ;

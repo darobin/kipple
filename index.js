@@ -9,8 +9,8 @@ let { platform, homedir, tmpdir } = require('os')
   , service = 'com.berjon.kipple'
 ;
 
-function die (err) {
-  console.error(`[Error]`, err);
+function die (...err) {
+  console.error(`[Error]`, ...err);
   process.exit(42);
 }
 

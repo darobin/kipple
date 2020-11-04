@@ -36,6 +36,7 @@ async function pull (account, source) {
       console.warn(`Extracing ${zipFile} to ${dataDir('roam', account, source)}`);
       await extract(zipFile, { dir: dataDir('roam', account, source) });
     }
+    await ctx.browser().close();
   }
 }
 
@@ -46,16 +47,16 @@ async function getLoggedInContext (account) {
   ;
   console.warn(`• Loading login`);
   await page.goto('https://roamresearch.com/#/signin');
-  await page.waitForNavigation();
+  // await page.waitForNavigation();
   await page.waitForSelector('input[name=email]');
-  let pwd = getPassword('roam', account);
+  let pwd = await getPassword('roam', account);
   await page.type('input[name=email]', account);
   await page.type('input[name=password]', pwd);
   await page.click('.bp3-button');
   console.warn(`• Submitted login`);
-  // Roam is pretty slow
-  await page.waitFor(15000);
-  await page.waitForSelector('.bp3-icon-more');
+  // Roam is pretty slow, though maybe we can just use the selector
+  // await page.waitForTimeout(15000);
+  await page.waitForSelector('.your-hosted-dbs-grid');
   console.warn(`• Logged in ${account}`);
   return context;
 }
@@ -66,27 +67,27 @@ async function downloadJSONZipFile (ctx, source) {
   ;
   // load DB page and prep for download
   console.warn(`• Loading source page`);
-  await page.goto(`https://roamresearch.com/#/app/${source}`);
-  await page.waitForNavigation();
+  await page.goto(`https://roamresearch.com/#/app/${source}`, { timeout: 60000 });
+  // await page.waitForNavigation();
   await page._client.send('Page.setDownloadBehavior', { behavior: 'allow', downloadPath: tmp });
   await page.waitForSelector('.bp3-icon-more');
   // click menu, then 'Export All' item
   await page.click('.bp3-icon-more');
-  await page.waitFor(1000);
+  await page.waitForTimeout(1000);
   await page.evaluate(() => {
     [...document.querySelectorAll('.bp3-menu li a')].forEach((entry) => {
       if (entry.innerText === 'Export All') entry.click();
     });
   });
-  await page.waitFor(2000);
+  await page.waitForTimeout(2000);
   // change the export option: click menu, click JSON item, click download button
-  await this.page.click('.bp3-dialog-container .bp3-popover-wrapper button');
-  await this.page.waitFor(1000);
-  await this.page.click('.bp3-dialog-container .bp3-popover-wrapper .bp3-popover-dismiss');
-  await this.page.waitFor(1000);
-  await this.page.click('.bp3-dialog-container .bp3-intent-primary');
+  await page.click('.bp3-dialog-container .bp3-popover-wrapper button');
+  await page.waitForTimeout(1000);
+  await page.click('.bp3-dialog-container .bp3-popover-wrapper .bp3-popover-dismiss');
+  await page.waitForTimeout(1000);
+  await page.click('.bp3-dialog-container .bp3-intent-primary');
   console.warn(`• Clicked download`);
-  // await this.page.waitFor(60000);
+  // await page.waitForTimeout(60000);
   let timerID = setTimeout(() => { throw new Error(`Download for ${source} never started.`); }, 20000);
   await new Promise((resolve, reject) => {
     page._client.on('Page.downloadProgress', ({ receivedBytes, totalBytes, state }) => {
