@@ -1,7 +1,7 @@
 
-let { platform, homedir } = require('os')
+let { platform, homedir, tmpdir } = require('os')
   , { join } = require('path')
-  , { mkdir, readFile, rm, readdir } = require('fs')
+  , { mkdir, readFile, rm, readdir, mkdtemp } = require('fs')
   , keytar = require('keytar')
   // , { post } = require('axios')
   , kipDirName = `${platform() === 'win32' ? '' : '.'}kipple`
@@ -70,6 +70,15 @@ function dataDir (system, account, source) {
   return join(kipDir, 'data', system, account, source || '');
 }
 
+async function tmpDir () {
+  return new Promise((resolve, reject) => {
+    mkdtemp(join(tmpdir(), 'kipple-'), (err, dir) => {
+      if (err) return reject(err);
+      resolve(dir);
+    });
+  });
+}
+
 function getPassword (system, account) {
   return keytar.getPassword(service, `${system}:${account}`);
 }
@@ -90,6 +99,7 @@ module.exports = {
   dataDir,
   rmDir,
   listSubdirNames,
+  tmpDir,
   getPassword,
   setPassword,
   deletePassword,
