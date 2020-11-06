@@ -4,7 +4,7 @@ let puppeteer = require('puppeteer')
   , { readdir } = require('fs')
   , { join } = require('path')
   , extract = require('extract-zip')
-  , { dataDir, listSubdirNames, getPassword, tmpDir } = require('./index')
+  , { dataDir, listSubdirNames, getPassword, tmpDir, loadJSON } = require('./index')
 ;
 
 async function pull (account, source) {
@@ -106,6 +106,37 @@ async function downloadJSONZipFile (ctx, source) {
   return zipFile;
 }
 
+async function listItems (account, source, { sort = 'alpha' } = {}) {
+  let data = await loadDB(account, source)
+    , cmpFunc = (a, b) => ((a || {}).title || '').localeCompare(((b || {}).title || ''))
+  ;
+  if (sort === 'edit') {
+    cmpFunc = (a, b) => {
+      let aTime = (a || {})['edit-time'] || (a || {})['create-time'] || 0
+        , bTime = (b || {})['edit-time'] || (b || {})['create-time'] || 0
+      ;
+      if (aTime < bTime) return -1;
+      if (aTime > bTime) return 1;
+      return 0;
+    };
+  }
+  else if (sort === 'create') {
+    cmpFunc = (a, b) => {
+      let aTime = (a || {})['create-time'] || (a || {})['edit-time'] || 0
+        , bTime = (b || {})['create-time'] || (b || {})['edit-time'] || 0
+      ;
+      if (aTime < bTime) return -1;
+      if (aTime > bTime) return 1;
+      return 0;
+    };
+  }
+  return data.sort(cmpFunc).map(it => (it || {}).title);
+}
+
+async function loadDB (account, source) {
+  return loadJSON(join(dataDir('roam', account, source), `${source}.json`));
+}
+
 async function listSources (account) {
   return listSubdirNames(dataDir('roam', account));
 }
@@ -116,4 +147,5 @@ async function listAccounts () {
 
 module.exports = {
   pull,
+  listItems,
 };
