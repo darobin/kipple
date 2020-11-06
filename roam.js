@@ -145,7 +145,35 @@ async function listAccounts () {
   return listSubdirNames(dataDir('roam'));
 }
 
+async function toHTML (account, source, item) {
+  let data = await loadDB(account, source)
+    , doc = data.find(it => it.title === item)
+  ;
+  if (!doc) throw new Error(`Could not find item "${item}" in ${account}/${source}`);
+  let nodesIdx = indexNodes(data);
+  // XXX: stopped here
+  // XXX:
+  //  - walk the doc
+  //  - produce title
+  //  - make sure we get metadata right based on internal system
+  //  - produce a real section outline that's correct using headings
+  //  - produce `p` where possible
+  //  - a `p` that has sub items makes a `ul` (and those can nest)
+  //  - parse the Markdown, enriched
+  //  - grab the images (or just link)
+  //  - Try to process references when there are embeds, eg. if it's an embed from a book or article
+  //    then that has to become a bibref which will get included at the end (and will get a
+  //    footnote).
+}
+
+function indexNodes (data) {
+  // XXX:
+  //  - walk every doc and maintain a mapping of the node uid
+  //  - this is meant to be used for embed lookups and the such
+}
+
 module.exports = {
   pull,
   listItems,
+  toHTML,
 };

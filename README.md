@@ -82,3 +82,7 @@ Pulls data from that source, overwriting the local content. If no `source` is sp
 are several known locally for that `account`, it will do all sources in turn. If no `account` is
 specified, it will do all locally-known accounts in turn, and all locally-known sources in each of
 them.
+
+### `kipple list-items <system> <account> [source] [--sort alpha|edit|create]`
+
+Lists the items in the system, and can sort them.

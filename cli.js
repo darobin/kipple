@@ -114,11 +114,15 @@ program
 program
   .command('list-items <system> <account> [source]')
   .description('list all the items in a given system, which must include the source if there is one')
-  .option('--sort [sortType]', 'how to sort the list (alpha/create/edit)', 'alpha')
+  .option('--sort <sortType>', 'how to sort the list (alpha/create/edit)', 'alpha')
   .action(async (system, account, source, options) => {
     try {
       let list = [];
-      if (system === 'roam') list = await roam.listItems(account, source, options);
+      if (system === 'roam') {
+        if (!source) die(`In roam, the source is required`);
+        list = await roam.listItems(account, source, options);
+      }
+      // XXX: add support for library-thing
       else die(`Unknown system: ${system}`);
       process.stdout.write(list.join('\n') + '\n');
     }
@@ -129,22 +133,27 @@ program
 ;
 
 // Conversion
-// program
-//   .command('html <system> [account] [source]')
-//   .description('pull data from a remote system, doing the specified account or all')
-//   .action(async (system, account, source) => {
-//     try {
-//       if (system === 'roam') await roam.pull(account, source);
-//       else if (system === 'library-thing') await libThing.pull(account);
-//       else die(`Unknown system: ${system}`);
-//       ok();
-//     }
-//     catch (err) {
-//       die(`Failed to pull:`, err);
-//     }
-//   })
-// ;
-
+program
+  .command('html <system> <account> [source] <item>')
+  .description('finds the item in the source (or just account) and converts it to HTML')
+  .requiredOption('--output, -o <path>', 'where to output the HTML')
+  .action(async (system, account, source, item, options) => {
+    try {
+      let html;
+      if (system === 'roam') {
+        if (!source) die(`In roam, the source is required`);
+        html = await roam.toHTML(account, source, item);
+      }
+      // XXX: add support for library-thing
+      else die(`Unknown system: ${system}`);
+      // XXX: save HTML to options.output
+      ok();
+    }
+    catch (err) {
+      die(`Failed to pull:`, err);
+    }
+  })
+;
 
 // now do something
 program.parseAsync(process.argv);
