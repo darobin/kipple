@@ -164,6 +164,7 @@ async function toHTML (account, source, item) {
   //  - Try to process references when there are embeds, eg. if it's an embed from a book or article
   //    then that has to become a bibref which will get included at the end (and will get a
   //    footnote).
+  //  - include CSS, make sure it's printable
 }
 
 function indexNodes (data) {
