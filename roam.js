@@ -200,17 +200,8 @@ function allChildren (node) {
 }
 
 async function toHTML (account, source, item) {
-  let data = await loadDB(account, source)
-    , doc = data.find(it => it.title === item)
-  ;
-  if (!doc) throw new Error(`Could not find item "${item}" in ${account}/${source}`);
-  let { rootNodesByName, rootMetadata } = indexNodes(data)
-    , node = rootNodesByName[item]
-    , meta = rootMetadata[item]
-  ;
-  // console.log(JSON.stringify(Object.keys(rootNodesByName), null, 2));
-  // console.log(JSON.stringify(rootMetadata, null, 2));
-  if (!node) throw new Error(`Cannot find item "${item}" in roam ${account}/${source}`);
+  let data = await loadDB(account, source);
+  let rr = new RoamRenderer(data);
   // XXX:
   //  - produce a real section outline that's correct using headings
   //  - parse the Markdown, enriched
@@ -219,48 +210,129 @@ async function toHTML (account, source, item) {
   //    then that has to become a bibref which will get included at the end (and will get a
   //    footnote).
   //  - include CSS, make sure it's printable
-
-  return renderToString(html`<!DOCTYPE html>
-    <html lang=${meta.lang || 'en'} dir="ltr">
-      <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width">
-        <title>${striptags(node.title)}</title>
-        <style>
-          /* fill from CSS file later */
-        </style>
-      </head>
-      <body>
-        <article>
-          <h1>${node.title}</h1>
-          ${renderChildren(node)}
-        </article>
-      </body>
-    </html>
-  `);
+  return rr.render(account, source, item);
 }
 
-function renderChildren (node, mode) {
-  if (!node.children) return nothing;
-  return node.children.map(n => {
-    if (n.heading) {
-      return html`<section>
-        ${unsafeHTML(`<h${n.heading + 1}>`)}${n.string}${unsafeHTML(`</h${n.heading + 1}>`)}
-        ${renderChildren(n)}
-      </section>`;
-    }
-    // return nothing;
-    if (mode === 'ul') {
-      return html`<li>
-        ${n.string}
-        ${n.children ? html`<ul>${renderChildren(n, 'ul')}</ul>` : nothing}
-      </li>`;
-    }
-    return html`<p>
-      ${n.string}
-    </p>
-    ${n.children ? html`<ul>${renderChildren(n, 'ul')}</ul>` : nothing}`;
-  });
+class RoamRenderer {
+  constructor (data) {
+    let nodeIndex = indexNodes(data);
+    this.rootNodesByName = nodeIndex.rootNodesByName;
+    this.rootMetadata = nodeIndex.rootMetadata;
+    this.nodesByUID = nodeIndex.nodesByUID;
+  }
+  render (account, source, item) {
+    let node = this.rootNodesByName[item]
+      , meta = this.rootMetadata[item]
+    ;
+    if (!node) throw new Error(`Cannot find item "${item}" in roam ${account}/${source}`);
+    return renderToString(html`<!DOCTYPE html>
+      <html lang=${meta.lang || 'en'} dir="ltr">
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width">
+          <title>${striptags(node.title)}</title>
+          <style>
+            .roam-link {
+              color: cornflowerblue;
+            }
+          </style>
+        </head>
+        <body>
+          <article>
+            <h1>${node.title}</h1>
+            ${this.renderChildren(node)}
+          </article>
+        </body>
+      </html>
+    `);
+  }
+  renderChildren (node, mode) {
+    let embedOnlyRx = /^\s*\{\{\[\[embed]]:\s*\(\((.+)\)\)}}\s*$/;
+    if (!node.children) return nothing;
+    return node.children.map(n => {
+      if (n.heading) {
+        return html`<section>
+          ${unsafeHTML(`<h${n.heading + 1}>`)}${this.renderNode(n.string)}${unsafeHTML(`</h${n.heading + 1}>`)}
+          ${this.renderChildren(n)}
+        </section>`;
+      }
+      // XXX: need to turn this into a reference somehow, depending on the type of the ref
+      // for instance if the root of the embed has a type, generate a footnote for it
+      if (n.string && embedOnlyRx.test(n.string)) {
+        let [, uid] = n.string.match(embedOnlyRx)
+          , embed = this.nodesByUID[uid]
+        ;
+        if (!embed) throw new Error(`Failed to find embedded node ${uid}`);
+        return this.renderChildren({ children: [embed] }, mode);
+      }
+      if (mode === 'ul') {
+        return html`<li>
+          ${this.renderNode(n.string)}
+          ${n.children ? html`<ul>${this.renderChildren(n, 'ul')}</ul>` : nothing}
+        </li>`;
+      }
+      if (mode === 'inline') {
+        return html`<span>${this.renderNode(n.string)}</span>
+        ${n.children ? html`<aside><ul>${this.renderChildren(n, 'ul')}</ul></aside>` : nothing}`;
+      }
+      return html`<p>
+        ${this.renderNode(n.string)}
+      </p>
+      ${n.children ? html`<ul>${this.renderChildren(n, 'ul')}</ul>` : nothing}`;
+    });
+  }
+  renderNode (str) {
+    let inStrong = false
+      , inEm = false
+      , inCode = false
+    ;
+    // This is a really shitty MD parser, but it might work better given that Roam has a pretty
+    // shitty implementation itself. If this doesn't fly, I can try something with remark.
+    // XXX:
+    //  - pre blocks
+    //  - LaTeX
+    //  - inline embeds
+    //  - bunch of others
+    str = str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/\{\{\[\[TODO]]}}/g, '<input type="checkbox" disabled>')
+      .replace(/\{\{\[\[DONE]]}}/g, '<input type="checkbox" disabled checked>')
+      .replace(/__/g, () => {
+        if (inEm) {
+          inEm = false;
+          return '</em>';
+        }
+        inEm = true;
+        return '<em>';
+      })
+      .replace(/\*\*/g, () => {
+        if (inStrong) {
+          inStrong = false;
+          return '</strong>';
+        }
+        inStrong = true;
+        return '<strong>';
+      })
+      .replace(/`/g, () => {
+        if (inCode) {
+          inCode = false;
+          return '</code>';
+        }
+        inCode = true;
+        return '<code>';
+      })
+      .replace(/\{\{\[\[embed]]:\s*\(\((.+)\)\)}}/g, (_, uid) => {
+        let embed = this.nodesByUID[uid];
+        if (!embed) throw new Error(`Failed to find embedded node ${uid}`);
+        return this.renderChildren({ children: [embed] }, 'inline');
+      })
+      .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">')
+      .replace(/\[([^\]]*)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
+      .replace(/\[\[([^\]]+)\]\]/g, '<span class="roam-link">$1</span>')
+    ;
+    return unsafeHTML(str);
+  }
 }
 
 module.exports = {
