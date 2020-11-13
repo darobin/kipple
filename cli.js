@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 let { program } = require('commander')
-  , { ok, die, ensureDir, dataDir, rmDir, getPassword, setPassword, deletePassword } = require('./index')
+  , { ok, die, ensureDir, dataDir, rmDir, getPassword, setPassword, deletePassword, saveFile } = require('./index')
   , roam = require('./roam')
   , libThing = require('./library-thing')
 ;
@@ -136,7 +136,7 @@ program
 program
   .command('html <system> <account> [source] <item>')
   .description('finds the item in the source (or just account) and converts it to HTML')
-  .requiredOption('--output, -o <path>', 'where to output the HTML')
+  .requiredOption('-o, --output <path>', 'where to output the HTML')
   .action(async (system, account, source, item, options) => {
     try {
       let html;
@@ -146,11 +146,11 @@ program
       }
       // XXX: add support for library-thing
       else die(`Unknown system: ${system}`);
-      // XXX: save HTML to options.output
+      await saveFile(options.output, html);
       ok();
     }
     catch (err) {
-      die(`Failed to pull:`, err);
+      die(`Failed to convert to HTML:`, err);
     }
   })
 ;

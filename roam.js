@@ -4,6 +4,9 @@ let puppeteer = require('puppeteer')
   , { readdir } = require('fs')
   , { join } = require('path')
   , extract = require('extract-zip')
+  , striptags = require('striptags')
+  , { html, renderToString, nothing } = require('@popeindustries/lit-html-server')
+  , { unsafeHTML } = require('@popeindustries/lit-html-server/directives/unsafe-html')
   , { dataDir, listSubdirNames, getPassword, tmpDir, loadJSON } = require('./index')
 ;
 
@@ -145,32 +148,119 @@ async function listAccounts () {
   return listSubdirNames(dataDir('roam'));
 }
 
+function indexNodes (data) {
+  let rootNodesByName = {}
+    , nodesByUID = {}
+    , uid2root = {}
+    , rootMetadata = {}
+  ;
+  data.forEach(node => {
+    rootNodesByName[node.title] = node;
+    allChildren(node).forEach(kid => {
+      if (kid.uid) {
+        nodesByUID[kid.uid] = kid;
+        uid2root[kid.uid] = node.title;
+      }
+    });
+    let meta = {};
+    if (node['create-time']) meta.created = new Date(node['create-time']);
+    if (node['edit-time']) meta.lastModified = new Date(node['edit-time']);
+    if (node.children) {
+      try {
+        node.children.forEach(kid => {
+          let match = kid.string && kid.string.match(/^\s*\*\*\s*(author|by|date|lang|publisher|retrieved|url|type)\s*\*\*\s*:\s*(.*)/i);
+          if (match) {
+            let [, key, value] = match;
+            key = key.toLowerCase();
+            if (key === 'by') key = 'author';
+            meta[key] = value;
+          }
+          else throw new Error('Hammer Time!');
+        });
+      }
+      catch (e) {}
+    }
+    rootMetadata[node.title] = meta;
+  });
+  return {
+    rootNodesByName,
+    nodesByUID,
+    uid2root,
+    rootMetadata,
+  };
+}
+
+function allChildren (node) {
+  let kids = [];
+  if (node.children) {
+    Array.prototype.push.apply(kids, node.children);
+    node.children.forEach(kid => Array.prototype.push.apply(kids, allChildren(kid)));
+  }
+  return kids;
+}
+
 async function toHTML (account, source, item) {
   let data = await loadDB(account, source)
     , doc = data.find(it => it.title === item)
   ;
   if (!doc) throw new Error(`Could not find item "${item}" in ${account}/${source}`);
-  let nodesIdx = indexNodes(data);
-  // XXX: stopped here
+  let { rootNodesByName, rootMetadata } = indexNodes(data)
+    , node = rootNodesByName[item]
+    , meta = rootMetadata[item]
+  ;
+  // console.log(JSON.stringify(Object.keys(rootNodesByName), null, 2));
+  // console.log(JSON.stringify(rootMetadata, null, 2));
+  if (!node) throw new Error(`Cannot find item "${item}" in roam ${account}/${source}`);
   // XXX:
-  //  - walk the doc
-  //  - produce title
-  //  - make sure we get metadata right based on internal system
   //  - produce a real section outline that's correct using headings
-  //  - produce `p` where possible
-  //  - a `p` that has sub items makes a `ul` (and those can nest)
   //  - parse the Markdown, enriched
   //  - grab the images (or just link)
   //  - Try to process references when there are embeds, eg. if it's an embed from a book or article
   //    then that has to become a bibref which will get included at the end (and will get a
   //    footnote).
   //  - include CSS, make sure it's printable
+
+  return renderToString(html`<!DOCTYPE html>
+    <html lang=${meta.lang || 'en'} dir="ltr">
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width">
+        <title>${striptags(node.title)}</title>
+        <style>
+          /* fill from CSS file later */
+        </style>
+      </head>
+      <body>
+        <article>
+          <h1>${node.title}</h1>
+          ${renderChildren(node)}
+        </article>
+      </body>
+    </html>
+  `);
 }
 
-function indexNodes (data) {
-  // XXX:
-  //  - walk every doc and maintain a mapping of the node uid
-  //  - this is meant to be used for embed lookups and the such
+function renderChildren (node, mode) {
+  if (!node.children) return nothing;
+  return node.children.map(n => {
+    if (n.heading) {
+      return html`<section>
+        ${unsafeHTML(`<h${n.heading + 1}>`)}${n.string}${unsafeHTML(`</h${n.heading + 1}>`)}
+        ${renderChildren(n)}
+      </section>`;
+    }
+    // return nothing;
+    if (mode === 'ul') {
+      return html`<li>
+        ${n.string}
+        ${n.children ? html`<ul>${renderChildren(n, 'ul')}</ul>` : nothing}
+      </li>`;
+    }
+    return html`<p>
+      ${n.string}
+    </p>
+    ${n.children ? html`<ul>${renderChildren(n, 'ul')}</ul>` : nothing}`;
+  });
 }
 
 module.exports = {

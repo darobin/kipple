@@ -39,8 +39,12 @@ async function loadJSON (path, def) {
 }
 
 async function saveJSON (path, data) {
+  return saveFile(path, JSON.stringify(data, null, 2));
+}
+
+async function saveFile (path, data) {
   return new Promise((resolve, reject) => {
-    writeFile(path, JSON.stringify(data, null, 2), (err) => {
+    writeFile(path, data, (err) => {
       if (err) return reject(err);
       resolve();
     });
@@ -104,6 +108,7 @@ module.exports = {
   ok,
   loadJSON,
   saveJSON,
+  saveFile,
   ensureDir,
   dataDir,
   rmDir,
