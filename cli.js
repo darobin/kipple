@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 
 let { program } = require('commander')
+  , { Remarkable } = require('remarkable-node')
   , { ok, die, ensureDir, dataDir, rmDir, getPassword, setPassword, deletePassword, saveFile } = require('./index')
   , roam = require('./roam')
   , libThing = require('./library-thing')
+  , remarkable = require('./remarkable')
 ;
 
 // --version
@@ -21,6 +23,10 @@ program
       checkSystem(system);
       let hadPwd = await deletePassword(system, account);
       if (hadPwd) console.warn(`Updating password for ${system}:${account}…`);
+      if (system === 'remarkable') {
+        let client = new Remarkable();
+        password = await client.register({ code: password });
+      }
       await setPassword(system, account, password);
       ok();
     }
@@ -58,13 +64,11 @@ program
   .description('adds a source of data, which is system/account/source, with an optional source')
   .action(async (system, account, source) => {
     try {
-      if (system === 'roam' || system === 'library-thing') {
-        if (system === 'roam' && !source) die(`Adding a Roam source requires specifying the database as your source.`);
-        let pwd = await getPassword(system, account);
-        if (!pwd) die(`Unknown account "${account}" in "${system}". Maybe "kipple login ${system} ${account}" first?`);
-        await ensureDir(dataDir(system, account, source));
-      }
-      else die(`Unknown system: ${system}`);
+      checkSystem(system);
+      if (system === 'roam' && !source) die(`Adding a Roam source requires specifying the database as your source.`);
+      let pwd = await getPassword(system, account);
+      if (!pwd) die(`Unknown account "${account}" in "${system}". Maybe "kipple login ${system} ${account}" first?`);
+      await ensureDir(dataDir(system, account, source));
       ok();
     }
     catch (err) {
@@ -100,6 +104,7 @@ program
     try {
       if (system === 'roam') await roam.pull(account, source);
       else if (system === 'library-thing') await libThing.pull(account);
+      else if (system === 'remarkable') await remarkable.pull(account);
       else die(`Unknown system: ${system}`);
       ok();
     }
@@ -159,6 +164,6 @@ program
 program.parseAsync(process.argv);
 
 function checkSystem (system) {
-  if (['roam', 'library-thing', 'evernote'].find(s => s === system)) return;
+  if (['roam', 'library-thing', 'evernote', 'remarkable'].find(s => s === system)) return;
   die(`Unknown system: ${system}`);
 }

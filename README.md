@@ -24,6 +24,7 @@ Currently, the systems that Kipple can interact with are:
 - [x] Roam Research
 - [ ] Evernote
 - [x] LibraryThing
+- [x] Remarkable
 - [ ] Zotero
 - [ ] Google Drive
 
@@ -36,6 +37,8 @@ The operations that Kipple can carry out are:
 - [ ] Converting between systems
 - [ ] Linking between systems
 - [ ] Running cron or event-driven tasks
+- [ ] Supporting local scripts that can perform specific tasks
+- [ ] Manipulating through a local server
 
 ## Managing accounts
 
@@ -58,6 +61,9 @@ account already exists.
 * For `library-thing`, this is your `userid` and the
   [JSON API key](http://www.librarything.com/api/json.php) (the value given as `key=` in the
   examples on that page).
+* For `remarkable`, the account is your login (or any string you would identify the account with,
+  it isn't actually used), and the password is the code you get from
+  [https://my.remarkable.com/connect/desktop](https://my.remarkable.com/connect/desktop).
 
 ### `kipple remove-login <system> <account>`
 

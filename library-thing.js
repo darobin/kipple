@@ -1,4 +1,3 @@
-/* eslint no-await-in-loop: 0 */
 
 let { get } = require('axios')
   , { join } = require('path')
