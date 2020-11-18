@@ -31,6 +31,7 @@
     "axios": "^0.21.0",
     "commander": "^6.2.0",
     "extract-zip": "^2.0.1",
+    "jsdom": "^16.4.0",
     "keytar": "^7.0.0",
     "p-all": "^3.0.0",
     "puppeteer": "^5.4.1",
