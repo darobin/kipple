@@ -25,6 +25,10 @@ Currently, the systems that Kipple can interact with are:
 - [ ] Evernote
 - [x] LibraryThing
 - [x] Remarkable
+  - [ ] In there, I would like to use the lines data
+        to detect which rectangles of which pages
+        have notes and highlights. Rasterise onto
+        a PNG of the PDF and crop. 
 - [ ] Zotero
 - [ ] Google Drive
 
