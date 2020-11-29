@@ -23,6 +23,7 @@ Currently, the systems that Kipple can interact with are:
 
 - [x] Roam Research
 - [ ] Evernote
+- [ ] Twitter
 - [x] LibraryThing
 - [x] Remarkable
   - [ ] In there, I would like to use the lines data
