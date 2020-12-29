@@ -28,7 +28,7 @@ class RoamRenderer {
     ;
     if (!node) throw new Error(`Cannot find item "${item}" in roam ${account}/${source}`);
     let ctx = {
-      data: node,
+      node,
       meta,
       dom: new JSDOM(`<!DOCTYPE html>
         <html dir="ltr">
@@ -53,13 +53,14 @@ class RoamRenderer {
         require('./h1'),
         require('./raw-children'),
         require('./sectionify'),
+        require('./md'),
         // XXX:
-        //  - MD
-        //  - {{things}}
+        //  - P-ify (and UL)
+        //  - {{things}}, [[Link Thing]], #hashtag
         //  - embeds that take up the full node might replace it?
         //  - footnotes from embeds
         // end
-        require('./cleanup'),
+        // require('./cleanup'),
       ]
     );
     return ctx.dom.serialize();
@@ -208,7 +209,7 @@ function renderChildren (ctx, parent, children) {
   (children || []).forEach(kid => {
     let div = ctx.doc.createElement('div');
     Object.keys(kid).forEach(k => {
-      if (k === 'children') return renderChildren(ctx, div, k.children);
+      if (k === 'children') return renderChildren(ctx, div, kid.children);
       div.setAttribute(`data-kipple-roam-${k}`, kid[k]);
     });
     parent.appendChild(div);
@@ -220,6 +221,7 @@ function renameElement (el, name) {
   while (el.hasChildNodes()) newEl.appendChild(el.firstChild);
   for (let atn of el.getAttributeNames()) newEl.setAttribute(atn, el.getAttribute(atn));
   el.parentNode.replaceChild(newEl, el);
+  return newEl;
 }
 
 module.exports = {
